@@ -99,10 +99,4 @@ public class PoolManager : MonoBehaviour
     {
         poolDic = new Dictionary<string, IPool>();
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

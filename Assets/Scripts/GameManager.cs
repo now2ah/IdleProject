@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -23,13 +25,23 @@ public class GameManager : MonoBehaviour
     public PlayerScript Player { get { return _player; } set { _player = value; } }
     public Spawner Spawner { get { return _spawner; } set { _spawner = value; } }
 
+    public event EventHandler OnGameStart;
+
+    IEnumerator GameStartCoroutine()
+    {
+        yield return new WaitForSeconds(1.0f);
+        
+        _isRunning = true;
+        OnGameStart.Invoke(this, EventArgs.Empty);
+    }
+
     public void GameOver()
     {
 
     }
 
-    private void Awake()
+    private void Start()
     {
-        _isRunning = true;
+        StartCoroutine(GameStartCoroutine());
     }
 }

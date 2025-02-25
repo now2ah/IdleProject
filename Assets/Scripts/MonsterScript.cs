@@ -89,6 +89,9 @@ public class Monster : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!GameManager.Instance.IsRunning)
+            return;
+
         if (!GameManager.Instance.Player.IsDead)
             _Move();
 

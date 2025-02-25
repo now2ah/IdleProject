@@ -218,6 +218,9 @@ public class PlayerScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!GameManager.Instance.IsRunning)
+            return;
+
         if (!_isAttack)
         {
             _Move();

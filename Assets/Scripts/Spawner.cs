@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,11 +13,16 @@ public class Spawner : MonoBehaviour
     public float SpawnTime;
     public GameObject MonsterPrefab;
 
+    void _OnGameStart(object o, EventArgs e)
+    {
+        StartCoroutine(SpawnMonsterCoroutine());
+    }
+
     void _SpawnMonster()
     {
-        Vector3 spawnPos = new Vector3(Random.Range(_collider.bounds.min.x, _collider.bounds.max.x),
-            Random.Range(_collider.bounds.min.y, _collider.bounds.max.y),
-            Random.Range(_collider.bounds.min.z, _collider.bounds.max.z));
+        Vector3 spawnPos = new Vector3(UnityEngine.Random.Range(_collider.bounds.min.x, _collider.bounds.max.x),
+            UnityEngine.Random.Range(_collider.bounds.min.y, _collider.bounds.max.y),
+            UnityEngine.Random.Range(_collider.bounds.min.z, _collider.bounds.max.z));
 
         _pool.GetGameObject((obj) => 
         {
@@ -44,6 +50,7 @@ public class Spawner : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        GameManager.Instance.OnGameStart += _OnGameStart;
         GameManager.Instance.Spawner = this;
         PoolManager.Instance.AddObjectPool("Monster");
 
@@ -56,7 +63,5 @@ public class Spawner : MonoBehaviour
 
         _pool = PoolManager.Instance.GetPoolObject("Monster") as ObjectPool;
         _pool.InitializePool(monsterList);
-
-        StartCoroutine(SpawnMonsterCoroutine());
     }
 }
