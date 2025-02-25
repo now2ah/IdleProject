@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class PlayerScript : MonoBehaviour
 {
@@ -22,7 +24,9 @@ public class PlayerScript : MonoBehaviour
     int _maxHP;
 
     public bool IsDead => _isDead;
+    public int Exp => _exp;
     public int MaxExp => _maxExp;
+    public int MaxHP => _maxHP;
 
     public int Level;
     public int HP;
@@ -30,6 +34,8 @@ public class PlayerScript : MonoBehaviour
     public float Speed;
     public float RotateSpeed;
     public float AttackSpeed;
+
+    public event EventHandler OnValueChanged;
 
     public void ApplyDamage(int damage)
     {
@@ -162,7 +168,7 @@ public class PlayerScript : MonoBehaviour
         _maxHP += 2;
         HP = _maxHP;
 
-        Debug.Log("Level UP : " + Level);
+        OnValueChanged.Invoke(this, EventArgs.Empty);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -213,6 +219,7 @@ public class PlayerScript : MonoBehaviour
     void Start()
     {
         GameManager.Instance.Player = this;
+        OnValueChanged.Invoke(this, EventArgs.Empty);
     }
 
     // Update is called once per frame
