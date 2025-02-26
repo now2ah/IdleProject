@@ -28,6 +28,11 @@ public class Spawner : MonoBehaviour
         {
             obj.transform.position = spawnPos;
             obj.SetActive(true);
+
+            if (obj.TryGetComponent<Monster>(out Monster monster))
+            {
+                monster.transform.localScale = Monster.monsterScale;
+            }
         });
     }
 

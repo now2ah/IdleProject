@@ -14,7 +14,12 @@ public class PlayerScript : MonoBehaviour
     bool _isMoveBWD = false;
     bool _isAttack = false;
     bool _isDead = false;
+    bool _canAttack = false;
     float _lastAttackTime;
+    float _nextAttackRatio;
+    bool _canSkill = false;
+    float _lastSkilltime;
+    float _nextSkillRatio;
 
     [SerializeField]
     int _exp;
@@ -24,6 +29,10 @@ public class PlayerScript : MonoBehaviour
     int _maxHP;
 
     public bool IsDead => _isDead;
+    public bool CanAttack => _canAttack;
+    public float NextAttackRatio => _nextAttackRatio;
+    public bool CanSkill => _canSkill;
+    public float NextSkillRatio => _nextSkillRatio;
     public int Exp => _exp;
     public int MaxExp => _maxExp;
     public int MaxHP => _maxHP;
@@ -34,17 +43,27 @@ public class PlayerScript : MonoBehaviour
     public float Speed;
     public float RotateSpeed;
     public float AttackSpeed;
+    public int SkillDamage;
+    public float SkillCooltime;
+
+    public GameObject LevelUpParticlePrefab;
+    public GameObject AttackParticlePrefab;
+    public GameObject SkillParticlePrefab;
+    public GameObject LoseHPParticlePrefab;
 
     public event EventHandler OnValueChanged;
+    public event EventHandler OnLevelUp;
 
     public void ApplyDamage(int damage)
     {
         HP -= damage;
+
+        GameObject loseHPParticle = Instantiate(LoseHPParticlePrefab, transform.position + transform.up, Quaternion.identity);
+
         if (HP <= 0)
         {
             _Die();
         }
-        Debug.Log("Get Damage (" + HP + "/" + _maxHP + ")");
     }
 
     public void GetExp(int exp)
@@ -60,7 +79,6 @@ public class PlayerScript : MonoBehaviour
             while (_exp >= _maxExp);
 
         }
-        Debug.Log("Get Exp (" + _exp + "/" + _maxExp + ")");
     }
 
     void _Move()
@@ -81,12 +99,12 @@ public class PlayerScript : MonoBehaviour
 
         if (Input.GetKey(KeyCode.D))
         {
-            transform.Rotate(new Vector3(0f, RotateSpeed, 0f));
+            transform.Rotate(new Vector3(0f, RotateSpeed * Speed * Time.deltaTime, 0f));
         }
 
         if (Input.GetKey(KeyCode.A))
         {
-            transform.Rotate(new Vector3(0f, RotateSpeed * -1f, 0f));
+            transform.Rotate(new Vector3(0f, RotateSpeed * Speed * Time.deltaTime * -1f, 0f));
         }
 
         if (Input.GetKeyUp(KeyCode.W))
@@ -109,6 +127,7 @@ public class PlayerScript : MonoBehaviour
 
     IEnumerator AttackCoroutine(Monster monster)
     {
+        _lastAttackTime = Time.time;
         float length = _animator.GetCurrentAnimatorStateInfo(0).length;
         _isIdle = false;
         _isMove = false;
@@ -117,20 +136,26 @@ public class PlayerScript : MonoBehaviour
         transform.LookAt(monster.transform.position);
         yield return new WaitForSeconds(length/2);
         monster.ApplyDamage(AttackDamage);
+        GameObject effect = Instantiate(AttackParticlePrefab, transform.position + transform.up, transform.rotation);
         yield return new WaitForSeconds(length / 2);
+        Destroy(effect);
         _isIdle = true;
         _isMove = false;
         _isMoveBWD = false;
         _isAttack = false;
-        _lastAttackTime = Time.time;
     }
 
     bool _CanAttack()
     {
         if ((Time.time - _lastAttackTime) > AttackSpeed)
+        {
             return true;
+        }
         else
+        {
+            _nextAttackRatio = (Time.time - _lastAttackTime) / AttackSpeed;
             return false;
+        }
     }
 
     void _SetAnimationParams()
@@ -169,6 +194,58 @@ public class PlayerScript : MonoBehaviour
         HP = _maxHP;
 
         OnValueChanged.Invoke(this, EventArgs.Empty);
+        Monster.monsterScale *= 1.5f;
+        Monster.maxHP += Level;
+        OnLevelUp.Invoke(this, EventArgs.Empty);
+        
+
+        if (null != LevelUpParticlePrefab)
+        {
+            Instantiate(LevelUpParticlePrefab, transform.position + transform.up * 2f, Quaternion.identity);
+        }
+    }
+
+    void _GetSkillInput()
+    {
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            if (_canSkill)
+            {
+                _ActivateSkill();
+            }
+        }
+    }
+
+    void _ActivateSkill()
+    {
+        StartCoroutine(SkillCoroutine());
+    }
+
+    IEnumerator SkillCoroutine()
+    {
+        GameObject skillObj = Instantiate(SkillParticlePrefab, transform.position, Quaternion.identity);
+        Skill skill = skillObj.GetComponent<Skill>();
+        skill.damage = SkillDamage;
+        _lastSkilltime = Time.time;
+        yield return null;
+    }
+
+    bool _CanSkill()
+    {
+        if ((Time.time - _lastSkilltime) > SkillCooltime)
+        {
+            return true;
+        }
+        else
+        {
+            _nextSkillRatio = (Time.time - _lastSkilltime) / SkillCooltime;
+            return false;
+        }
+    }
+
+    void _OnStart(object o, EventArgs e)
+    {
+        OnValueChanged.Invoke(this, EventArgs.Empty);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -189,8 +266,11 @@ public class PlayerScript : MonoBehaviour
         {
             if (other.TryGetComponent<Monster>(out Monster monster))
             {
-                if (_CanAttack() && !_isMove && !_isMoveBWD)
+                if (_CanAttack() && !_isMove && !_isMoveBWD && !monster.IsDead)
+                {
                     _Attack(monster);
+                }
+                    
             }
         }
     }
@@ -204,12 +284,18 @@ public class PlayerScript : MonoBehaviour
         _isMove = false;
         _isAttack = false;
         _isDead = false;
+        _lastAttackTime = 0f;
+        _nextAttackRatio = 1f;
+        _lastSkilltime = 0f;
+        _nextSkillRatio = 1f;
         Level = 1;
         HP = 10;
         AttackDamage = 10;
         Speed = 2.2f;
         RotateSpeed = 1.0f;
         AttackSpeed = 1.0f;
+        SkillDamage = 10;
+        SkillCooltime = 1f;
         _exp = 0;
         _maxExp = 5;
         _maxHP = 10;
@@ -218,8 +304,8 @@ public class PlayerScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        GameManager.Instance.OnGameStart += _OnStart;
         GameManager.Instance.Player = this;
-        OnValueChanged.Invoke(this, EventArgs.Empty);
     }
 
     // Update is called once per frame
@@ -228,11 +314,22 @@ public class PlayerScript : MonoBehaviour
         if (!GameManager.Instance.IsRunning)
             return;
 
+        if (_isDead)
+            return;
+
         if (!_isAttack)
         {
             _Move();
         }
 
+        _canAttack = _CanAttack();
+        _canSkill = _CanSkill();
+
+        if (_canSkill)
+            _GetSkillInput();
+
         _SetAnimationParams();
+
+        
     }
 }

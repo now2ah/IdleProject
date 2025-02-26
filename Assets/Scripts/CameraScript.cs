@@ -1,9 +1,25 @@
+using System.Collections;
 using UnityEngine;
 
 public class CameraScript : MonoBehaviour
 {
     public Vector3 PositionOffset;
     //public Vector3 RotationOffset;
+
+    public int shakeCount = 3;
+
+    public void Shake()
+    {
+        StartCoroutine(ShakeCoroutine());
+    }
+
+    IEnumerator ShakeCoroutine()
+    {
+        for (int i=0; i<shakeCount; i++)
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
 
     void _Move()
     {

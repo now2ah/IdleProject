@@ -13,6 +13,10 @@ public class UIManager : MonoBehaviour
     public Slider expSlider;
     public Image gameStartImage;
     public Image gameOverImage;
+    public Image baseAttackImage;
+    public Slider baseAttackSlider;
+    public Image skillImage;
+    public Slider skillSlider;
 
     void _OnStart(object o, EventArgs e)
     {
@@ -43,14 +47,26 @@ public class UIManager : MonoBehaviour
         expSlider.value = expRatio;
     }
 
+    void _SetSkillValues()
+    {
+        if (null == GameManager.Instance.Player)
+            return;
+
+        baseAttackImage.gameObject.SetActive(GameManager.Instance.Player.CanAttack);
+        baseAttackSlider.value = GameManager.Instance.Player.NextAttackRatio;
+
+        skillImage.gameObject.SetActive(GameManager.Instance.Player.CanSkill);
+        skillSlider.value = GameManager.Instance.Player.NextSkillRatio;
+    }
+
     void _SetInfoTexts()
     {
         if (null == GameManager.Instance.Player)
             return;
 
-        levelText.text = GameManager.Instance.Player.Level.ToString();
-        damageText.text = GameManager.Instance.Player.AttackDamage.ToString();
-        attackSpeedText.text = GameManager.Instance.Player.AttackSpeed.ToString();
+        levelText.text = "Level : " + GameManager.Instance.Player.Level.ToString();
+        damageText.text = "Damage : " + GameManager.Instance.Player.AttackDamage.ToString();
+        attackSpeedText.text = "AttackSpeed : " + GameManager.Instance.Player.AttackSpeed.ToString();
     }
 
     private void Start()
@@ -62,5 +78,6 @@ public class UIManager : MonoBehaviour
     void Update()
     {
         _SetSliderValues();
+        _SetSkillValues();
     }
 }

@@ -1,14 +1,20 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
 public class Monster : MonoBehaviour
 {
+    public static Vector3 monsterScale = Vector3.one;
+    public static int maxHP = 10;
+
     Animator _animator;
     Rigidbody _rigidbody;
     Collider _collider;
     bool _isIdle = true;
     bool _isMove = false;
     bool _isDead = false;
+
+    public bool IsDead => _isDead;
 
     public int HP;
     public float Speed;
@@ -25,6 +31,15 @@ public class Monster : MonoBehaviour
         if (HP <= 0)
         {
             _Die();
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "PlayerSkill")
+        {
+            Skill skill = other.gameObject.GetComponent<Skill>();
+            ApplyDamage(skill.Damage);
         }
     }
 
@@ -64,12 +79,17 @@ public class Monster : MonoBehaviour
         _animator.SetBool("isDead", _isDead);
     }
 
+    void _OnPlayerLevelUp(object o, EventArgs e)
+    {
+        transform.localScale = monsterScale;
+    }
+
     private void OnEnable()
     {
         _isIdle = true;
         _isMove = false;
         _isDead = false;
-        HP = 10;
+        HP = maxHP;
         Speed = 1f;
         AttackDamage = 1;
     }
@@ -84,6 +104,8 @@ public class Monster : MonoBehaviour
         Speed = 1f;
         AttackDamage = 1;
         Exp = 1;
+
+        GameManager.Instance.Player.OnLevelUp += _OnPlayerLevelUp;
     }
 
     // Update is called once per frame
