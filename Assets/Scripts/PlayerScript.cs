@@ -53,6 +53,7 @@ public class PlayerScript : MonoBehaviour
 
     public event EventHandler OnValueChanged;
     public event EventHandler OnLevelUp;
+    public event EventHandler OnDie;
 
     public void ApplyDamage(int damage)
     {
@@ -79,6 +80,33 @@ public class PlayerScript : MonoBehaviour
             while (_exp >= _maxExp);
 
         }
+    }
+
+    public void Heal(int amount)
+    {
+        if (_isDead)
+            return;
+
+        HP += amount;
+
+        if (HP > _maxHP)
+            HP = _maxHP;
+    }
+
+    public void SpeedUp(float amount, float time)
+    {
+        if (_isDead)
+            return;
+
+        StartCoroutine(SpeedUpCoroutine(amount, time));
+    }
+
+    IEnumerator SpeedUpCoroutine(float amount, float time)
+    {
+        float originSpeed = Speed;
+        Speed *= amount;
+        yield return new WaitForSeconds(time);
+        Speed = originSpeed;
     }
 
     void _Move()
@@ -179,8 +207,11 @@ public class PlayerScript : MonoBehaviour
 
     IEnumerator DieCoroutine()
     {
+        yield return new WaitForEndOfFrame();
+        _SetAnimationParams();
         float length = _animator.GetCurrentAnimatorStateInfo(0).length;
         yield return new WaitForSeconds(length);
+        OnDie.Invoke(this, EventArgs.Empty);
         GameManager.Instance.GameOver();
     }
 
@@ -262,6 +293,9 @@ public class PlayerScript : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
+        if (_isDead)
+            return;
+
         if (other.tag == "Monster")
         {
             if (other.TryGetComponent<Monster>(out Monster monster))
@@ -270,7 +304,6 @@ public class PlayerScript : MonoBehaviour
                 {
                     _Attack(monster);
                 }
-                    
             }
         }
     }
@@ -292,7 +325,7 @@ public class PlayerScript : MonoBehaviour
         HP = 10;
         AttackDamage = 10;
         Speed = 2.2f;
-        RotateSpeed = 1.0f;
+        RotateSpeed = 100.0f;
         AttackSpeed = 1.0f;
         SkillDamage = 10;
         SkillCooltime = 1f;
@@ -329,7 +362,5 @@ public class PlayerScript : MonoBehaviour
             _GetSkillInput();
 
         _SetAnimationParams();
-
-        
     }
 }

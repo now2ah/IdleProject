@@ -28,6 +28,11 @@ public class UIManager : MonoBehaviour
         _SetInfoTexts();
     }
 
+    void _OnDie(object o, EventArgs e)
+    {
+        gameOverImage.gameObject.SetActive(true);
+    }
+
     IEnumerator StartPanelCoroutine()
     {
         gameStartImage.gameObject.SetActive(true);
@@ -73,6 +78,7 @@ public class UIManager : MonoBehaviour
     {
         GameManager.Instance.OnGameStart += _OnStart;
         GameManager.Instance.Player.OnValueChanged += _OnValueChanged;
+        GameManager.Instance.Player.OnDie += _OnDie;
     }
 
     void Update()

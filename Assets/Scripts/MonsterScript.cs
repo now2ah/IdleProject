@@ -21,12 +21,23 @@ public class Monster : MonoBehaviour
     public int AttackDamage;
     public int Exp;
 
+    public GameObject DamageTextPrefab;
+    public GameObject HealthItemPrefab;
+    public GameObject SpeedUpItemPrefab;
+
     public void ApplyDamage(int damage)
     {
         if (HP <= 0)
             return;
 
         HP -= damage;
+        if (null != DamageTextPrefab)
+        {
+            GameObject dmgTextObj = Instantiate(DamageTextPrefab, transform.position + transform.up * 1.5f, Quaternion.identity);
+            DamageText dmgText = dmgTextObj.GetComponent<DamageText>();
+            dmgText.Text = damage.ToString();
+        }
+            
 
         if (HP <= 0)
         {
@@ -61,13 +72,20 @@ public class Monster : MonoBehaviour
     void _Die()
     {
         _isDead = true;
-        StartCoroutine(DieCoroutine());
+        int randNum = UnityEngine.Random.Range(0, 5);
+        StartCoroutine(DieCoroutine(randNum));
     }
 
-    IEnumerator DieCoroutine()
+    IEnumerator DieCoroutine(int randNum)
     {
         float length = _animator.GetCurrentAnimatorStateInfo(0).length;
         yield return new WaitForSeconds(length);
+
+        if (randNum == 3)
+            Instantiate(HealthItemPrefab, transform.position + transform.up * 0.5f, Quaternion.identity);
+        else if (randNum == 4)
+            Instantiate(SpeedUpItemPrefab, transform.position + transform.up * 0.5f, Quaternion.identity);
+
         GameManager.Instance.Player.GetExp(Exp);
         GameManager.Instance.Spawner.Pool.ReturnObject(this.gameObject);
     }
