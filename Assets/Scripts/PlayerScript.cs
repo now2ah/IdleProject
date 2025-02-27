@@ -20,6 +20,7 @@ public class PlayerScript : MonoBehaviour
     bool _canSkill = false;
     float _lastSkilltime;
     float _nextSkillRatio;
+    float _originSpeed;
 
     [SerializeField]
     int _exp;
@@ -50,6 +51,7 @@ public class PlayerScript : MonoBehaviour
     public GameObject AttackParticlePrefab;
     public GameObject SkillParticlePrefab;
     public GameObject LoseHPParticlePrefab;
+    public GameObject DustParticlePrefab;
 
     public event EventHandler OnValueChanged;
     public event EventHandler OnLevelUp;
@@ -103,10 +105,17 @@ public class PlayerScript : MonoBehaviour
 
     IEnumerator SpeedUpCoroutine(float amount, float time)
     {
-        float originSpeed = Speed;
+        float runTime = 0;
         Speed *= amount;
-        yield return new WaitForSeconds(time);
-        Speed = originSpeed;
+
+        while (runTime <= time)
+        {
+            runTime += 0.5f;
+            Instantiate(DustParticlePrefab, transform.position, Quaternion.identity);
+            yield return new WaitForSeconds(0.5f);
+        }
+        
+        Speed = _originSpeed;
     }
 
     void _Move()
@@ -127,12 +136,12 @@ public class PlayerScript : MonoBehaviour
 
         if (Input.GetKey(KeyCode.D))
         {
-            transform.Rotate(new Vector3(0f, RotateSpeed * Speed * Time.deltaTime, 0f));
+            transform.Rotate(new Vector3(0f, RotateSpeed * Time.deltaTime, 0f));
         }
 
         if (Input.GetKey(KeyCode.A))
         {
-            transform.Rotate(new Vector3(0f, RotateSpeed * Speed * Time.deltaTime * -1f, 0f));
+            transform.Rotate(new Vector3(0f, RotateSpeed * Time.deltaTime * -1f, 0f));
         }
 
         if (Input.GetKeyUp(KeyCode.W))
@@ -161,7 +170,7 @@ public class PlayerScript : MonoBehaviour
         _isMove = false;
         _isMoveBWD = false;
         _isAttack = true;
-        transform.LookAt(monster.transform.position);
+        transform.LookAt(new Vector3(monster.transform.position.x, 0f, monster.transform.position.z));
         yield return new WaitForSeconds(length/2);
         monster.ApplyDamage(AttackDamage);
         GameObject effect = Instantiate(AttackParticlePrefab, transform.position + transform.up, transform.rotation);
@@ -321,6 +330,7 @@ public class PlayerScript : MonoBehaviour
         _nextAttackRatio = 1f;
         _lastSkilltime = 0f;
         _nextSkillRatio = 1f;
+        _originSpeed = 2.2f;
         Level = 1;
         HP = 10;
         AttackDamage = 10;
